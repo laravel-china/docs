@@ -10,6 +10,8 @@
 
 [Redis](http://redis.io) is an open source, advanced key-value store. It is often referred to as a data structure server since keys can contain [strings](http://redis.io/topics/data-types#strings), [hashes](http://redis.io/topics/data-types#hashes), [lists](http://redis.io/topics/data-types#lists), [sets](http://redis.io/topics/data-types#sets), and [sorted sets](http://redis.io/topics/data-types#sorted-sets).
 
+Before using Redis with Laravel, you will need to install the `predis/predis` package (~1.0) via Composer.
+
 > **Note:** If you have the Redis PHP extension installed via PECL, you will need to rename the alias for Redis in your `config/app.php` file.
 
 <a name="configuration"></a>
@@ -17,13 +19,13 @@
 
 The Redis configuration for your application is stored in the `config/database.php` file. Within this file, you will see a `redis` array containing the Redis servers used by your application:
 
-	'redis' => array(
+	'redis' => [
 
 		'cluster' => true,
 
-		'default' => array('host' => '127.0.0.1', 'port' => 6379),
+		'default' => ['host' => '127.0.0.1', 'port' => 6379],
 
-	),
+	],
 
 The default server configuration should suffice for development. However, you are free to modify this array based on your environment. Simply give each Redis server a name, and specify the host and port used by the server.
 
@@ -62,7 +64,7 @@ When you are simply executing commands against the default connection, just use 
 
 	$values = Redis::lrange('names', 5, 10);
 
-> **Note:** Redis [cache](/docs/cache) and [session](/docs/session) drivers are included with Laravel.
+> **Note:** Redis [cache](/docs/5.0/cache) and [session](/docs/5.0/session) drivers are included with Laravel.
 
 <a name="pipelining"></a>
 ## Pipelining

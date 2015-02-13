@@ -11,7 +11,6 @@
 - [Deletes](#deletes)
 - [Unions](#unions)
 - [Pessimistic Locking](#pessimistic-locking)
-- [Caching Queries](#caching-queries)
 
 <a name="introduction"></a>
 ## Introduction
@@ -31,6 +30,25 @@ The database query builder provides a convenient, fluent interface to creating a
 	{
 		var_dump($user->name);
 	}
+
+#### Chunking Results From A Table
+
+	DB::table('users')->chunk(100, function($users)
+	{
+		foreach ($users as $user)
+		{
+			//
+		}
+	});
+
+You may stop further chunks from being processed by returning `false` from the `Closure`:
+
+	DB::table('users')->chunk(100, function($users)
+	{
+		//
+
+		return false;
+	});
 
 #### Retrieving A Single Row From A Table
 
@@ -216,20 +234,6 @@ Sometimes you may need to use a raw expression in a query. These expressions wil
 	                     ->groupBy('status')
 	                     ->get();
 
-#### Incrementing or decrementing a value of a column
-
-	DB::table('users')->increment('votes');
-
-	DB::table('users')->increment('votes', 5);
-
-	DB::table('users')->decrement('votes');
-
-	DB::table('users')->decrement('votes', 5);
-
-You may also specify additional columns to update:
-
-	DB::table('users')->increment('votes', 1, array('name' => 'John'));
-
 <a name="inserts"></a>
 ## Inserts
 
@@ -264,6 +268,20 @@ If the table has an auto-incrementing id, use `insertGetId` to insert a record a
 	DB::table('users')
 	            ->where('id', 1)
 	            ->update(array('votes' => 1));
+
+#### Incrementing or decrementing a value of a column
+
+	DB::table('users')->increment('votes');
+
+	DB::table('users')->increment('votes', 5);
+
+	DB::table('users')->decrement('votes');
+
+	DB::table('users')->decrement('votes', 5);
+
+You may also specify additional columns to update:
+
+	DB::table('users')->increment('votes', 1, array('name' => 'John'));
 
 <a name="deletes"></a>
 ## Deletes
@@ -303,16 +321,3 @@ To run the SELECT statement with a "shared lock", you may use the `sharedLock` m
 To "lock for update" on a SELECT statement, you may use the `lockForUpdate` method on a query:
 
 	DB::table('users')->where('votes', '>', 100)->lockForUpdate()->get();
-
-<a name="caching-queries"></a>
-## Caching Queries
-
-You may easily cache the results of a query using the `remember` method:
-
-	$users = DB::table('users')->remember(10)->get();
-
-In this example, the results of the query will be cached for ten minutes. While the results are cached, the query will not be run against the database, and the results will be loaded from the default cache driver specified for your application.
-
-If you are using a [supported cache driver](/docs/cache#cache-tags), you can also add tags to the caches:
-
-	$users = DB::table('users')->cacheTags(array('people', 'authors'))->remember(10)->get();

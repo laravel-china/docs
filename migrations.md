@@ -9,26 +9,22 @@
 <a name="introduction"></a>
 ## Introduction
 
-Migrations are a type of version control for your database. They allow a team to modify the database schema and stay up to date on the current schema state. Migrations are typically paired with the [Schema Builder](/docs/schema) to easily manage your application's scheme.
+Migrations are a type of version control for your database. They allow a team to modify the database schema and stay up to date on the current schema state. Migrations are typically paired with the [Schema Builder](/docs/5.0/schema) to easily manage your application's schema.
 
 <a name="creating-migrations"></a>
 ## Creating Migrations
 
-To create a migration, you may use the `migrate:make` command on the Artisan CLI:
+To create a migration, you may use the `make:migration` command on the Artisan CLI:
 
-	php artisan migrate:make create_users_table
+	php artisan make:migration create_users_table
 
 The migration will be placed in your `database/migrations` folder, and will contain a timestamp which allows the framework to determine the order of the migrations.
 
-You may also specify a `--path` option when creating the migration. The path should be relative to the root directory of your installation:
-
-	php artisan migrate:make foo --path=app/migrations
-
 The `--table` and `--create` options may also be used to indicate the name of the table, and whether the migration will be creating a new table:
 
-	php artisan migrate:make add_votes_to_user_table --table=users
+	php artisan make:migration add_votes_to_user_table --table=users
 
-	php artisan migrate:make create_users_table --create=users
+	php artisan make:migration create_users_table --create=users
 
 <a name="running-migrations"></a>
 ## Running Migrations
@@ -37,19 +33,11 @@ The `--table` and `--create` options may also be used to indicate the name of th
 
 	php artisan migrate
 
-#### Running All Outstanding Migrations For A Path
-
-	php artisan migrate --path=app/foo/migrations
-
-#### Running All Outstanding Migrations For A Package
-
-	php artisan migrate --package=vendor/package
-
 > **Note:** If you receive a "class not found" error when running migrations, try running the `composer dump-autoload` command.
 
 ### Forcing Migrations In Production
 
-Some migration operations are destructive, meaning they may cause you to lose data. In order to protect you from running these commands against your production database, you will prompted for confirmation before these commands are executed. To force thse commands to run without a prompt, use the `--force` flag:
+Some migration operations are destructive, meaning they may cause you to lose data. In order to protect you from running these commands against your production database, you will prompted for confirmation before these commands are executed. To force the commands to run without a prompt, use the `--force` flag:
 
 	php artisan migrate --force
 

@@ -21,13 +21,13 @@ Sometimes you may wish to use one database connection for SELECT statements, and
 
 To see how read / write connections should be configured, let's look at this example:
 
-	'mysql' => array(
-		'read' => array(
+	'mysql' => [
+		'read' => [
 			'host' => '192.168.1.1',
-		),
-		'write' => array(
+		],
+		'write' => [
 			'host' => '196.168.1.2'
-		),
+		],
 		'driver'    => 'mysql',
 		'database'  => 'database',
 		'username'  => 'root',
@@ -35,28 +35,28 @@ To see how read / write connections should be configured, let's look at this exa
 		'charset'   => 'utf8',
 		'collation' => 'utf8_unicode_ci',
 		'prefix'    => '',
-	),
+	],
 
 Note that two keys have been added to the configuration array: `read` and `write`. Both of these keys have array values containing a single key: `host`. The rest of the database options for the `read` and `write` connections will be merged from the main `mysql` array. So, we only need to place items in the `read` and `write` arrays if we wish to override the values in the main array. So, in this case, `192.168.1.1` will be used as the "read" connection, while `192.168.1.2` will be used as the "write" connection. The database credentials, prefix, character set, and all other options in the main `mysql` array will be shared across both connections.
 
 <a name="running-queries"></a>
 ## Running Queries
 
-Once you have configured your database connection, you may run queries using the `DB` class.
+Once you have configured your database connection, you may run queries using the `DB` facade.
 
 #### Running A Select Query
 
-	$results = DB::select('select * from users where id = ?', array(1));
+	$results = DB::select('select * from users where id = ?', [1]);
 
 The `select` method will always return an `array` of results.
 
 #### Running An Insert Statement
 
-	DB::insert('insert into users (id, name) values (?, ?)', array(1, 'Dayle'));
+	DB::insert('insert into users (id, name) values (?, ?)', [1, 'Dayle']);
 
 #### Running An Update Statement
 
-	DB::update('update users set votes = 100 where name = ?', array('John'));
+	DB::update('update users set votes = 100 where name = ?', ['John']);
 
 #### Running A Delete Statement
 
@@ -84,7 +84,7 @@ To run a set of operations within a database transaction, you may use the `trans
 
 	DB::transaction(function()
 	{
-		DB::table('users')->update(array('votes' => 1));
+		DB::table('users')->update(['votes' => 1]);
 
 		DB::table('posts')->delete();
 	});

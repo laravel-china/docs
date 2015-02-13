@@ -112,6 +112,8 @@ The `array_get` method will retrieve a given value from a deeply nested array us
 
 	$value = array_get($array, 'names.joe');
 
+	$value = array_get($array, 'names.john', 'default');
+
 > **Note:** Want something like `array_get` but for objects instead? Use `object_get`.
 
 ### array_only
@@ -206,7 +208,7 @@ Get the fully qualified path to the `public` directory.
 
 ### storage_path
 
-Get the fully qualified path to the `app/storage` directory.
+Get the fully qualified path to the `storage` directory.
 
 <a name="strings"></a>
 ## Strings
@@ -302,6 +304,18 @@ Generate a random string of the given length.
 Convert a string to its singular form (English only).
 
 	$singular = str_singular('cars');
+	
+### str_slug
+
+Generate a URL friendly "slug" from a given string.
+
+	str_slug($title, $separator);
+
+Example:
+	
+	$title = str_slug("Laravel 5 Framework", "-");
+	
+	// laravel-5-framework
 
 ### studly_case
 

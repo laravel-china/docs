@@ -1,42 +1,183 @@
 # Release Notes
 
-- [Laravel 4.3](#laravel-4.3)
+- [Laravel 5.0](#laravel-5.0)
 - [Laravel 4.2](#laravel-4.2)
 - [Laravel 4.1](#laravel-4.1)
 
-<a name="laravel-4.3"></a>
-## Laravel 4.3
+<a name="laravel-5.0"></a>
+## Laravel 5.0
 
-Laravel 4.3 introduces a fresh application structure to the default Laravel project. This new structure serves as a better foundation for building robust application in Laravel, as well as embraces new auto-loading standards (PSR-4) throughout the application. First, let's examine two of the major changes:
+Laravel 5.0 introduces a fresh application structure to the default Laravel project. This new structure serves as a better foundation for building robust application in Laravel, as well as embraces new auto-loading standards (PSR-4) throughout the application. First, let's examine some of the major changes:
 
 ### New Folder Structure
 
-The old `app/models` directory has been entirely removed. Instead, all of your code lives directly within the `app` folder, and, by default, is organized to the `App` namespace. This default namespace can be quickly changed using the new `app:name` Artisan command. The Laravel class generators will remember your application namespace by examining the new `config/namespaces.php` configuration file.
+The old `app/models` directory has been entirely removed. Instead, all of your code lives directly within the `app` folder, and, by default, is organized to the `App` namespace. This default namespace can be quickly changed using the new `app:name` Artisan command.
 
-Controllers, filters, and requests (a new type of class in Laravel 4.3) are now grouped under the `app/Http` directory, as they are all classes related to the HTTP transport layer of your application. Instead of a single, flat file of route filters, all filters are now broken into their own class files.
+Controllers, middleware, and requests (a new type of class in Laravel 5.0) are now grouped under the `app/Http` directory, as they are all classes related to the HTTP transport layer of your application. Instead of a single, flat file of route filters, all middleware are now broken into their own class files.
 
 A new `app/Providers` directory replaces the `app/start` files from previous versions of Laravel 4.x. These service providers provide various bootstrapping functions to your application, such as error handling, logging, route loading, and more. Of course, you are free to create additional service providers for your application.
 
 Application language files and views have been moved to the `resources` directory.
 
-### Thorough Namespacing
+### Contracts
 
-Laravel 4.3 ships with the entire `app` directory under the `App` namespace. Out of the box, Composer will auto-load all classes within the `app` directory using the PSR-4 auto-loading standard, eliminating the need to `composer dump-autoload` every time you add a new class to your project. Of course, since controllers are namespaced, you will need to import any classes you utilize from other namespaces.
+All major Laravel components implement interfaces which are located in the `illuminate/contracts` repository. This repository has no external dependencies. Having a convenient, centrally located set of interfaces you may use for decoupling and dependency injection will serve as an easy alternative option to Laravel Facades.
 
-### Dependency Injection On Routes & Controller Methods
+For more information on contracts, consult the [full documentation](/docs/5.0/contracts).
 
-In previous versions of Laravel 4.x, you can type type-hint controller dependencies in the controller's constructor and they will automatically be injected into the controller instance. Of course, this is still possible in Laravel 4.3; however, you can also type-hint dependencies on your controller **methods** as well! For example:
+### Route Cache
 
-	public function show(PhotoService $photos, $id)
+If your application is made up entirely of controller routes, you may utilize the new `route:cache` Artisan command to drastically speed up the registration of your routes. This is primarily useful on applications with 100+ routes and will **drastically** speed up this portion of your application.
+
+### Route Middleware
+
+In addition to Laravel 4 style route "filters", Laravel 5 now supports HTTP middleware, and the included authentication and CSRF "filters" have been converted to middleware. Middleware provides a single, consistent interface to replace all types of filters, allowing you to easily inspect, and even reject, requests before they enter your application.
+
+For more information on middleware, check out [the documentation](/docs/5.0/middleware).
+
+### Controller Method Injection
+
+In addition to the existing constructor injection, you may now type-hint dependencies on controller methods. The [IoC container](/docs/5.0/container) will automatically inject the dependencies, even if the route contains other parameters:
+
+	public function createPost(Request $request, PostRepository $posts)
 	{
-		$photo = $photos->find($id);
-
 		//
 	}
 
+### Authentication Scaffolding
+
+User registration, authentication, and password reset controllers are now included out of the box, as well as simple corresponding views, which are located at `resources/views/auth`. In addition, a "users" table migration has been included with the framework. Including these simple resources allows rapid development of application ideas without bogging down on authentication boilerplate. The authentication views may be accessed on the `auth/login` and `auth/register` routes. The `App\Services\Auth\Registrar` service is responsible for user validation and creation.
+
+### Event Objects
+
+You may now define events as objects instead of simply using strings. For example, check out the following event:
+
+	class PodcastWasPurchased {
+
+		public $podcast;
+
+		public function __construct(Podcast $podcast)
+		{
+			$this->podcast = $podcast;
+		}
+
+	}
+
+The event may be dispatched like normal:
+
+	Event::fire(new PodcastWasPurchased($podcast));
+
+Of course, your event handler will receive the event object instead of a list of data:
+
+	class ReportPodcastPurchase {
+
+		public function handle(PodcastWasPurchased $event)
+		{
+			//
+		}
+
+	}
+
+For more information on working with events, check out the [full documentation](/docs/5.0/events).
+
+### Commands / Queueing
+
+In addition to the queue job format supported in Laravel 4, Laravel 5 allows you to represent your queued jobs as simple command objects. These commands live in the `app/Commands` directory. Here's a sample command:
+
+	class PurchasePodcast extends Command implements SelfHandling, ShouldBeQueued {
+
+		use SerializesModels;
+
+		protected $user, $podcast;
+
+		/**
+		 * Create a new command instance.
+		 *
+		 * @return void
+		 */
+		public function __construct(User $user, Podcast $podcast)
+		{
+			$this->user = $user;
+			$this->podcast = $podcast;
+		}
+
+		/**
+		 * Execute the command.
+		 *
+		 * @return void
+		 */
+		public function handle()
+		{
+			// Handle the logic to purchase the podcast...
+
+			event(new PodcastWasPurchased($this->user, $this->podcast));
+		}
+
+	}
+
+The base Laravel controller utilizes the new `DispatchesCommands` trait, allowing you to easily dispatch your commands for execution:
+
+	$this->dispatch(new PurchasePodcastCommand($user, $podcast));
+
+Of course, you may also use commands for tasks that are executed synchonrously (are not queued). In fact, using commands is a great way to encapsulate complex tasks your application needs to perform. For more information, check out the [command bus](/docs/5.0/bus) documentation.
+
+### Database Queue
+
+A `database` queue driver is now included in Laravel, providing a simple, local queue driver that requires no extra package installation beyond your database software.
+
+### Laravel Scheduler
+
+In the past, developers have generated a Cron entry for each console command they wished to schedule. However, this is a headache. Your console schedule is no longer in source control, and you must SSH into your server to add the Cron entries. Let's make our lives easier. The Laravel command scheduler allows you to fluently and expressively define your command schedule within Laravel itself, and only a single Cron entry is needed on your server.
+
+It looks like this:
+
+	$schedule->command('artisan:command')->dailyAt('15:00');
+
+Of course, check out the [full documentation](/docs/5.0/artisan#scheduling-artisan-commands) to learn all about the scheduler!
+
+### Tinker / Psysh
+
+The `php artisan tinker` command now utilizes [Psysh](https://github.com/bobthecow/psysh) by Justin Hileman, a more robust REPL for PHP. If you liked Boris in Laravel 4, you're going to love Psysh. Even better, it works on Windows! To get started, just try:
+
+	php artisan tinker
+
+### DotEnv
+
+Instead of a variety of confusing, nested environment configuration directories, Laravel 5 now utilizes [DotEnv](https://github.com/vlucas/phpdotenv) by Vance Lucas. This library provides a super simple way to manage your environment configuration, and makes environment detection in Laravel 5 a breeze. For more details, check out the full [configuration documentation](/docs/5.0/configuration#environment-configuration).
+
+### Laravel Elixir
+
+Laravel Elixir, by Jeffrey Way, provides a fluent, expressive interface to compiling and concatenating your assets. If you've ever been intimidated by learning Grunt or Gulp, fear no more. Elixir makes it a cinch to get started using Gulp to compile your Less, Sass, and CoffeeScript. It can even run your tests for you!
+
+For more information on Elixir, check out the [full documentation](/docs/5.0/elixir).
+
+### Laravel Socialite
+
+Laravel Socialite is an optional, Laravel 5.0+ compatible package that provides totally painless authentication with OAuth providers. Currently, Socialite supports Facebook, Twitter, Google, and GitHub. Here's what it looks like:
+
+	public function redirectForAuth()
+	{
+		return Socialize::with('twitter')->redirect();
+	}
+
+	public function getUserFromProvider()
+	{
+		$user = Socialize::with('twitter')->user();
+	}
+
+No more spending hours writing OAuth authentication flows. Get started in minutes! The [full documentation](/docs/5.0/authentication#social-authentication) has all the details.
+
+### Flysystem Integration
+
+Laravel now includes the powerful [Flysystem](https://github.com/thephpleague/flysystem) filesystem abstraction library, providing pain free integration with local, Amazon S3, and Rackspace cloud storage - all with one, unified and elegant API! Storing a file in Amazon S3 is now as simple as:
+
+	Storage::put('file.txt', 'contents');
+
+For more information on the Laravel Flysystem integration, consult the [full documentation](/docs/5.0/filesystem).
+
 ### Form Requests
 
-Laravel 4.3 introduces **form requests**, which extend the `Illuminate\Foundation\Http\FormRequest` class. These request objects can be combined with the method injection described above to provide a boiler-plate free method of validating user input. Let's dig in and look at a sample `FormRequest`:
+Laravel 5.0 introduces **form requests**, which extend the `Illuminate\Foundation\Http\FormRequest` class. These request objects can be combined with controller method injection to provide a boiler-plate free method of validating user input. Let's dig in and look at a sample `FormRequest`:
 
 	<?php namespace App\Http\Requests;
 
@@ -64,15 +205,37 @@ Once the class has been defined, we can type-hint it on our controller action:
 		var_dump($request->input());
 	}
 
-When the Laravel IoC container identifies that the class it is injecting is a `FormRequest` instance, the request will **automatically be validated**. This means that if your controller action is called, you can safely assume the HTTP request input has been validated according to the rules you specified in your form request class. Even more, if the request is invalid, an HTTP redirect, which you may customize, will automatically be issued, and the error messages will be either flashed to the session or converted to JSON. **Form validation has never been more simple.** For more information on `FormRequest` validation, check out the [documentation](/docs/validation#form-requests).
+When the Laravel IoC container identifies that the class it is injecting is a `FormRequest` instance, the request will **automatically be validated**. This means that if your controller action is called, you can safely assume the HTTP request input has been validated according to the rules you specified in your form request class. Even more, if the request is invalid, an HTTP redirect, which you may customize, will automatically be issued, and the error messages will be either flashed to the session or converted to JSON. **Form validation has never been more simple.** For more information on `FormRequest` validation, check out the [documentation](/docs/5.0/validation#form-request-validation).
+
+### Simple Controller Request Validation
+
+The Laravel 5 base controller now includes a `ValidatesRequests` trait. This trait provides a simple `validate` method to validate incoming requests. If `FormRequests` are a little too much for your application, check this out:
+
+	public function createPost(Request $request)
+	{
+		$this->validate($request, [
+			'title' => 'required|max:255',
+			'body' => 'required',
+		]);
+	}
+
+If the validation fails, an exception will be thrown and the proper HTTP response will automatically be sent back to the browser. The validation errors will even be flashed to the session! If the request was an AJAX request, Laravel even takes care of sending a JSON representation of the validation errors back to you.
+
+For more information on this new method, check out [the documentation](/docs/5.0/validation#controller-validation).
 
 ### New Generators
 
-To compliment the new default application structure, `provider:make`, `filter:make`, and `request:make` Artisan commands have been added to the framework.
+To compliment the new default application structure, new Artisan generator commands have been added to the framework. See `php artisan list` for more details.
 
-### Route Cache
+### Configuration Cache
 
-If your application is made up entirely of controller routes, you may utilize the new `route:cache` Artisan command to drastically speed up the registration of your routes. This is primarily useful on applications with 100+ routes and typically makes this portion of your code 50x faster. Literally!
+You may now cache all of your configuration in a single file using the `config:cache` command.
+
+### Symfony VarDumper
+
+The popular `dd` helper function, which dumps variable debug information, has been upgraded to use the amazing Symfony VarDumper. This provides color-coded output and even collapsing of arrays. Just try the following in your project:
+
+	dd([1, 2, 3]);
 
 <a name="laravel-4.2"></a>
 ## Laravel 4.2
@@ -95,7 +258,7 @@ More information about Laravel Forge can be found on the [official Forge website
 
 ### Laravel Homestead
 
-Laravel Homestead is an official Vagrant environment for developing robust Laravel and PHP applications. The vast majority of the boxes' provisioning needs are handled before the box is packaged for distribution, allowing the box to boot extremely quickly. Homestead includes Nginx 1.6, PHP 5.5.12, MySQL, Postgres, Redis, Memcached, Beanstalk, Node, Gulp, Grunt, & Bower. Homestead includes a simple `Homestead.yaml` configuration file for managing multiple Laravel applications on a single box.
+Laravel Homestead is an official Vagrant environment for developing robust Laravel and PHP applications. The vast majority of the boxes' provisioning needs are handled before the box is packaged for distribution, allowing the box to boot extremely quickly. Homestead includes Nginx 1.6, PHP 5.6, MySQL, Postgres, Redis, Memcached, Beanstalk, Node, Gulp, Grunt, & Bower. Homestead includes a simple `Homestead.yaml` configuration file for managing multiple Laravel applications on a single box.
 
 The default Laravel 4.2 installation now includes an `app/config/local/database.php` configuration file that is configured to use the Homestead database out of the box, making Laravel initial installation and configuration more convenient.
 

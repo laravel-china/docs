@@ -17,6 +17,7 @@
 - [Collections](#collections)
 - [Accessors & Mutators](#accessors-and-mutators)
 - [Date Mutators](#date-mutators)
+- [Attribute Casting](#attribute-casting)
 - [Model Events](#model-events)
 - [Model Observers](#model-observers)
 - [Converting To Arrays / JSON](#converting-to-arrays-or-json)
@@ -31,15 +32,19 @@ Before getting started, be sure to configure a database connection in `config/da
 <a name="basic-usage"></a>
 ## Basic Usage
 
-To get started, create an Eloquent model. Models typically live in the `app` directory, but you are free to place them anywhere that can be auto-loaded according to your `composer.json` file.
+To get started, create an Eloquent model. Models typically live in the `app` directory, but you are free to place them anywhere that can be auto-loaded according to your `composer.json` file. All Eloquent models extend `Illuminate\Database\Eloquent\Model`.
 
 #### Defining An Eloquent Model
 
-	class User extends Eloquent {}
+	class User extends Model {}
+
+You may also generate Eloquent models using the `make:model` command:
+
+	php artisan make:model User
 
 Note that we did not tell Eloquent which table to use for our `User` model. The lower-case, plural name of the class will be used as the table name unless another name is explicitly specified. So, in this case, Eloquent will assume the `User` model stores records in the `users` table. You may specify a custom table by defining a `table` property on your model:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		protected $table = 'my_users';
 
@@ -117,6 +122,10 @@ You may also specify which database connection should be used when running an El
 
 	$user = User::on('connection-name')->find(1);
 
+If you are using [read / write connections](/docs/5.0/database#read-write-connections), you may force the query to use the "write" connection with the following method:
+
+	$user = User::onWriteConnection()->find(1);
+
 <a name="mass-assignment"></a>
 ## Mass Assignment
 
@@ -128,7 +137,7 @@ To get started, set the `fillable` or `guarded` properties on your model.
 
 The `fillable` property specifies which attributes should be mass-assignable. This can be set at the class or instance level.
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		protected $fillable = array('first_name', 'last_name', 'email');
 
@@ -140,7 +149,7 @@ In this example, only the three listed attributes will be mass-assignable.
 
 The inverse of `fillable` is `guarded`, and serves as a "black-list" instead of a "white-list":
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		protected $guarded = array('id', 'password');
 
@@ -177,7 +186,7 @@ After saving or creating a new model that uses auto-incrementing IDs, you may re
 
 #### Setting The Guarded Attributes On The Model
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		protected $guarded = array('id', 'account_id');
 
@@ -245,13 +254,13 @@ If you wish to simply update the timestamps on a model, you may use the `touch` 
 <a name="soft-deleting"></a>
 ## Soft Deleting
 
-When soft deleting a model, it is not actually removed from your database. Instead, a `deleted_at` timestamp is set on the record. To enable soft deletes for a model, apply the `SoftDeletingTrait` to the model:
+When soft deleting a model, it is not actually removed from your database. Instead, a `deleted_at` timestamp is set on the record. To enable soft deletes for a model, apply the `SoftDeletes` to the model:
 
-	use Illuminate\Database\Eloquent\SoftDeletingTrait;
+	use Illuminate\Database\Eloquent\SoftDeletes;
 
-	class User extends Eloquent {
+	class User extends Model {
 
-		use SoftDeletingTrait;
+		use SoftDeletes;
 
 		protected $dates = ['deleted_at'];
 
@@ -311,7 +320,7 @@ By default, Eloquent will maintain the `created_at` and `updated_at` columns on 
 
 #### Disabling Auto Timestamps
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		protected $table = 'users';
 
@@ -323,7 +332,7 @@ By default, Eloquent will maintain the `created_at` and `updated_at` columns on 
 
 If you wish to customize the format of your timestamps, you may override the `getDateFormat` method in your model:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		protected function getDateFormat()
 		{
@@ -339,7 +348,7 @@ If you wish to customize the format of your timestamps, you may override the `ge
 
 Scopes allow you to easily re-use query logic in your models. To define a scope, simply prefix a model method with `scope`:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		public function scopePopular($query)
 		{
@@ -359,9 +368,9 @@ Scopes allow you to easily re-use query logic in your models. To define a scope,
 
 #### Dynamic Scopes
 
-Sometimes You may wish to define a scope that accepts parameters. Just add your parameters to your scope function:
+Sometimes you may wish to define a scope that accepts parameters. Just add your parameters to your scope function:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		public function scopeOfType($query, $type)
 		{
@@ -379,16 +388,16 @@ Then pass the parameter into the scope call:
 
 Sometimes you may wish to define a scope that applies to all queries performed on a model. In essence, this is how Eloquent's own "soft delete" feature works. Global scopes are defined using a combination of PHP traits and an implementation of `Illuminate\Database\Eloquent\ScopeInterface`.
 
-First, let's define a trait. For this example, we'll use the `SoftDeletingTrait` that ships with Laravel:
+First, let's define a trait. For this example, we'll use the `SoftDeletes` that ships with Laravel:
 
-	trait SoftDeletingTrait {
+	trait SoftDeletes {
 
 		/**
 		 * Boot the soft deleting trait for a model.
 		 *
 		 * @return void
 		 */
-		public static function bootSoftDeletingTrait()
+		public static function bootSoftDeletes()
 		{
 			static::addGlobalScope(new SoftDeletingScope);
 		}
@@ -457,11 +466,11 @@ Of course, your database tables are probably related to one another. For example
 
 A one-to-one relationship is a very basic relation. For example, a `User` model might have one `Phone`. We can define this relation in Eloquent:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		public function phone()
 		{
-			return $this->hasOne('Phone');
+			return $this->hasOne('App\Phone');
 		}
 
 	}
@@ -478,41 +487,41 @@ The SQL performed by this statement will be as follows:
 
 Take note that Eloquent assumes the foreign key of the relationship based on the model name. In this case, `Phone` model is assumed to use a `user_id` foreign key. If you wish to override this convention, you may pass a second argument to the `hasOne` method. Furthermore, you may pass a third argument to the method to specify which local column that should be used for the association:
 
-	return $this->hasOne('Phone', 'foreign_key');
+	return $this->hasOne('App\Phone', 'foreign_key');
 
-	return $this->hasOne('Phone', 'foreign_key', 'local_key');
+	return $this->hasOne('App\Phone', 'foreign_key', 'local_key');
 
 #### Defining The Inverse Of A Relation
 
 To define the inverse of the relationship on the `Phone` model, we use the `belongsTo` method:
 
-	class Phone extends Eloquent {
+	class Phone extends Model {
 
 		public function user()
 		{
-			return $this->belongsTo('User');
+			return $this->belongsTo('App\User');
 		}
 
 	}
 
 In the example above, Eloquent will look for a `user_id` column on the `phones` table. If you would like to define a different foreign key column, you may pass it as the second argument to the `belongsTo` method:
 
-	class Phone extends Eloquent {
+	class Phone extends Model {
 
 		public function user()
 		{
-			return $this->belongsTo('User', 'local_key');
+			return $this->belongsTo('App\User', 'local_key');
 		}
 
 	}
 
 Additionally, you pass a third parameter which specifies the name of the associated column on the parent table:
 
-	class Phone extends Eloquent {
+	class Phone extends Model {
 
 		public function user()
 		{
-			return $this->belongsTo('User', 'local_key', 'parent_key');
+			return $this->belongsTo('App\User', 'local_key', 'parent_key');
 		}
 
 	}
@@ -522,11 +531,11 @@ Additionally, you pass a third parameter which specifies the name of the associa
 
 An example of a one-to-many relation is a blog post that "has many" comments. We can model this relation like so:
 
-	class Post extends Eloquent {
+	class Post extends Model {
 
 		public function comments()
 		{
-			return $this->hasMany('Comment');
+			return $this->hasMany('App\Comment');
 		}
 
 	}
@@ -541,19 +550,19 @@ If you need to add further constraints to which comments are retrieved, you may 
 
 Again, you may override the conventional foreign key by passing a second argument to the `hasMany` method. And, like the `hasOne` relation, the local column may also be specified:
 
-	return $this->hasMany('Comment', 'foreign_key');
+	return $this->hasMany('App\Comment', 'foreign_key');
 
-	return $this->hasMany('Comment', 'foreign_key', 'local_key');
+	return $this->hasMany('App\Comment', 'foreign_key', 'local_key');
 
 #### Defining The Inverse Of A Relation
 
 To define the inverse of the relationship on the `Comment` model, we use the `belongsTo` method:
 
-	class Comment extends Eloquent {
+	class Comment extends Model {
 
 		public function post()
 		{
-			return $this->belongsTo('Post');
+			return $this->belongsTo('App\Post');
 		}
 
 	}
@@ -565,11 +574,11 @@ Many-to-many relations are a more complicated relationship type. An example of s
 
 We can define a many-to-many relation using the `belongsToMany` method:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		public function roles()
 		{
-			return $this->belongsToMany('Role');
+			return $this->belongsToMany('App\Role');
 		}
 
 	}
@@ -580,19 +589,19 @@ Now, we can retrieve the roles through the `User` model:
 
 If you would like to use an unconventional table name for your pivot table, you may pass it as the second argument to the `belongsToMany` method:
 
-	return $this->belongsToMany('Role', 'user_roles');
+	return $this->belongsToMany('App\Role', 'user_roles');
 
 You may also override the conventional associated keys:
 
-	return $this->belongsToMany('Role', 'user_roles', 'user_id', 'foo_id');
+	return $this->belongsToMany('App\Role', 'user_roles', 'user_id', 'foo_id');
 
 Of course, you may also define the inverse of the relationship on the `Role` model:
 
-	class Role extends Eloquent {
+	class Role extends Model {
 
 		public function users()
 		{
-			return $this->belongsToMany('User');
+			return $this->belongsToMany('App\User');
 		}
 
 	}
@@ -600,7 +609,7 @@ Of course, you may also define the inverse of the relationship on the `Role` mod
 <a name="has-many-through"></a>
 ### Has Many Through
 
-The "has many through" relation provides a convenient short-cut for accessing distant relations via an intermediate relation. For example, a `Country` model might have many `Posts` through a `Users` model. The tables for this relationship would look like this:
+The "has many through" relation provides a convenient short-cut for accessing distant relations via an intermediate relation. For example, a `Country` model might have many `Post` through a `User` model. The tables for this relationship would look like this:
 
 	countries
 		id - integer
@@ -618,22 +627,22 @@ The "has many through" relation provides a convenient short-cut for accessing di
 
 Even though the `posts` table does not contain a `country_id` column, the `hasManyThrough` relation will allow us to access a country's posts via `$country->posts`. Let's define the relationship:
 
-	class Country extends Eloquent {
+	class Country extends Model {
 
 		public function posts()
 		{
-			return $this->hasManyThrough('Post', 'User');
+			return $this->hasManyThrough('App\Post', 'User');
 		}
 
 	}
 
 If you would like to manually specify the keys of the relationship, you may pass them as the third and fourth arguments to the method:
 
-	class Country extends Eloquent {
+	class Country extends Model {
 
 		public function posts()
 		{
-			return $this->hasManyThrough('Post', 'User', 'country_id', 'user_id');
+			return $this->hasManyThrough('App\Post', 'User', 'country_id', 'user_id');
 		}
 
 	}
@@ -643,7 +652,7 @@ If you would like to manually specify the keys of the relationship, you may pass
 
 Polymorphic relations allow a model to belong to more than one other model, on a single association. For example, you might have a photo model that belongs to either a staff model or an order model. We would define this relation like so:
 
-	class Photo extends Eloquent {
+	class Photo extends Model {
 
 		public function imageable()
 		{
@@ -652,20 +661,20 @@ Polymorphic relations allow a model to belong to more than one other model, on a
 
 	}
 
-	class Staff extends Eloquent {
+	class Staff extends Model {
 
 		public function photos()
 		{
-			return $this->morphMany('Photo', 'imageable');
+			return $this->morphMany('App\Photo', 'imageable');
 		}
 
 	}
 
-	class Order extends Eloquent {
+	class Order extends Model {
 
 		public function photos()
 		{
-			return $this->morphMany('Photo', 'imageable');
+			return $this->morphMany('App\Photo', 'imageable');
 		}
 
 	}
@@ -737,27 +746,27 @@ In addition to traditional polymorphic relations, you may also specify many-to-m
 
 Next, we're ready to setup the relationships on the model. The `Post` and `Video` model will both have a `morphToMany` relationship via a `tags` method:
 
-	class Post extends Eloquent {
+	class Post extends Model {
 
 		public function tags()
 		{
-			return $this->morphToMany('Tag', 'taggable');
+			return $this->morphToMany('App\Tag', 'taggable');
 		}
 
 	}
 
 The `Tag` model may define a method for each of its relationships:
 
-	class Tag extends Eloquent {
+	class Tag extends Model {
 
 		public function posts()
 		{
-			return $this->morphedByMany('Post', 'taggable');
+			return $this->morphedByMany('App\Post', 'taggable');
 		}
 
 		public function videos()
 		{
-			return $this->morphedByMany('Video', 'taggable');
+			return $this->morphedByMany('App\Video', 'taggable');
 		}
 
 	}
@@ -775,6 +784,10 @@ You may also specify an operator and a count:
 
 	$posts = Post::has('comments', '>=', 3)->get();
 
+Nested `has` statements may also be constructed using "dot" notation:
+
+	$posts = Post::has('comments.votes')->get();
+
 If you need even more power, you may use the `whereHas` and `orWhereHas` methods to put "where" conditions on your `has` queries:
 
 	$posts = Post::whereHas('comments', function($q)
@@ -788,11 +801,11 @@ If you need even more power, you may use the `whereHas` and `orWhereHas` methods
 
 Eloquent allows you to access your relations via dynamic properties. Eloquent will automatically load the relationship for you, and is even smart enough to know whether to call the `get` (for one-to-many relationships) or `first` (for one-to-one relationships) method.  It will then be accessible via a dynamic property by the same name as the relation. For example, with the following model `$phone`:
 
-	class Phone extends Eloquent {
+	class Phone extends Model {
 
 		public function user()
 		{
-			return $this->belongsTo('User');
+			return $this->belongsTo('App\User');
 		}
 
 	}
@@ -814,11 +827,11 @@ It may be shortened to simply:
 
 Eager loading exists to alleviate the N + 1 query problem. For example, consider a `Book` model that is related to `Author`. The relationship is defined like so:
 
-	class Book extends Eloquent {
+	class Book extends Model {
 
 		public function author()
 		{
-			return $this->belongsTo('Author');
+			return $this->belongsTo('App\Author');
 		}
 
 	}
@@ -940,6 +953,14 @@ Of course, the opposite of `attach` is `detach`:
 
 	$user->roles()->detach(1);
 
+Both `attach` and `detach` also take arrays of IDs as input:
+
+	$user = User::find(1);
+
+	$user->roles()->detach([1, 2, 3]);
+
+	$user->roles()->attach([1 => ['attribute1' => 'value1'], 2, 3]);
+
 #### Using Sync To Attach Many To Many Models
 
 You may also use the `sync` method to attach related models. The `sync` method accepts an array of IDs to place on the pivot table. After this operation is complete, only the IDs in the array will be on the intermediate table for the model:
@@ -967,13 +988,13 @@ In this example, the new `Role` model will be saved and attached to the user mod
 
 When a model `belongsTo` another model, such as a `Comment` which belongs to a `Post`, it is often helpful to update the parent's timestamp when the child model is updated. For example, when a `Comment` model is updated, you may want to automatically touch the `updated_at` timestamp of the owning `Post`. Eloquent makes it easy. Just add a `touches` property containing the names of the relationships to the child model:
 
-	class Comment extends Eloquent {
+	class Comment extends Model {
 
 		protected $touches = array('post');
 
 		public function post()
 		{
-			return $this->belongsTo('Post');
+			return $this->belongsTo('App\Post');
 		}
 
 	}
@@ -1002,13 +1023,13 @@ Notice that each `Role` model we retrieve is automatically assigned a `pivot` at
 
 By default, only the keys will be present on the `pivot` object. If your pivot table contains extra attributes, you must specify them when defining the relationship:
 
-	return $this->belongsToMany('Role')->withPivot('foo', 'bar');
+	return $this->belongsToMany('App\Role')->withPivot('foo', 'bar');
 
 Now the `foo` and `bar` attributes will be accessible on our `pivot` object for the `Role` model.
 
 If you want your pivot table to have automatically maintained `created_at` and `updated_at` timestamps, use the `withTimestamps` method on the relationship definition:
 
-	return $this->belongsToMany('Role')->withTimestamps();
+	return $this->belongsToMany('App\Role')->withTimestamps();
 
 #### Deleting Records On A Pivot Table
 
@@ -1103,7 +1124,7 @@ When filtering collections, the callback provided will be used as callback for [
 
 Sometimes, you may wish to return a custom Collection object with your own added methods. You may specify this on your Eloquent model by overriding the `newCollection` method:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		public function newCollection(array $models = array())
 		{
@@ -1119,7 +1140,7 @@ Sometimes, you may wish to return a custom Collection object with your own added
 
 Eloquent provides a convenient way to transform your model attributes when getting or setting them. Simply define a `getFooAttribute` method on your model to declare an accessor. Keep in mind that the methods should follow camel-casing, even though your database columns are snake-case:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		public function getFirstNameAttribute($value)
 		{
@@ -1134,7 +1155,7 @@ In the example above, the `first_name` column has an accessor. Note that the val
 
 Mutators are declared in a similar fashion:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		public function setFirstNameAttribute($value)
 		{
@@ -1164,6 +1185,43 @@ To totally disable date mutations, simply return an empty array from the `getDat
 		return array();
 	}
 
+<a name="attribute-casting"></a>
+## Attribute Casting
+
+If you have some attributes that you want to always convert to another data-type, you may add the attribute to the `casts` property of your model. Otherwise, you will have to define a mutator for each of the attributes, which can be time consuming. Here is an example of using the `casts` property:
+
+	/**
+	 * The attributes that should be casted to native types.
+	 *
+	 * @var array
+	 */
+	protected $casts = [
+		'is_admin' => 'boolean',
+	];
+
+Now the `is_admin` attribute will always be cast to a boolean when you access it, even if the underlying value is stored in the database as an integer. Other supported cast types are: `integer`, `real`, `float`, `double`, `string`, `boolean`, and `array`.
+
+The `array` cast is particularly useful for working with columns that are stored as serialized JSON. For example, if your database has a TEXT type field that contains serialized JSON, adding the `array` cast to that attribute will automatically deserialize the attribute to a PHP array when you access it on your Eloquent model:
+
+	/**
+	 * The attributes that should be casted to native types.
+	 *
+	 * @var array
+	 */
+	protected $casts = [
+		'options' => 'array',
+	];
+
+Now, when you utilize the Eloquent model:
+
+	$user = User::find(1);
+
+	// $options is an array...
+	$options = $user->options;
+
+	// options is automatically serialized back to JSON...
+	$user->options = ['foo' => 'bar'];
+
 <a name="model-events"></a>
 ## Model Events
 
@@ -1180,19 +1238,24 @@ If `false` is returned from the `creating`, `updating`, `saving`, or `deleting` 
 		if ( ! $user->isValid()) return false;
 	});
 
-#### Setting A Model Boot Method
+#### Where To Register Event Listeners
 
-Eloquent models also contain a static `boot` method, which may provide a convenient place to register your event bindings.
+Your `EventServiceProvider` serves as a convenient place to register your model event bindings. For example:
 
-	class User extends Eloquent {
+	/**
+	 * Register any other events for your application.
+	 *
+	 * @param  \Illuminate\Contracts\Events\Dispatcher  $events
+	 * @return void
+	 */
+	public function boot(DispatcherContract $events)
+	{
+		parent::boot($events);
 
-		public static function boot()
+		User::creating(function($user)
 		{
-			parent::boot();
-
-			// Setup event bindings...
-		}
-
+			//
+		});
 	}
 
 <a name="model-observers"></a>
@@ -1254,7 +1317,7 @@ Note that when a model or collection is cast to a string, it will be converted t
 
 Sometimes you may wish to limit the attributes that are included in your model's array or JSON form, such as passwords. To do so, add a `hidden` property definition to your model:
 
-	class User extends Eloquent {
+	class User extends Model {
 
 		protected $hidden = array('password');
 
@@ -1278,4 +1341,4 @@ Once you have created the accessor, just add the value to the `appends` property
 
 	protected $appends = array('is_admin');
 
-Once the attribute has been added to the `appends` list, it will be included in both the model's array and JSON forms.
+Once the attribute has been added to the `appends` list, it will be included in both the model's array and JSON forms. Attributes in the `appends` array respect the `visible` and `hidden` configuration on the model.

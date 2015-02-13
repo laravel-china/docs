@@ -1,4 +1,4 @@
-# Unit Testing
+# Testing
 
 - [Introduction](#introduction)
 - [Defining & Running Tests](#defining-and-running-tests)
@@ -12,7 +12,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-Laravel is built with unit testing in mind. In fact, support for testing with PHPUnit is included out of the box, and a `phpunit.xml` file is already setup for your application. In addition to PHPUnit, Laravel also utilizes the Symfony HttpKernel, DomCrawler, and BrowserKit components to allow you to inspect and manipulate your views while testing, allowing to simulate a web browser.
+Laravel is built with unit testing in mind. In fact, support for testing with PHPUnit is included out of the box, and a `phpunit.xml` file is already setup for your application.
 
 An example test file is provided in the `tests` directory. After installing a new Laravel application, simply run `phpunit` on the command line to run your tests.
 
@@ -40,6 +40,8 @@ You may run all of the tests for your application by executing the `phpunit` com
 ## Test Environment
 
 When running unit tests, Laravel will automatically set the configuration environment to `testing`. Also, Laravel includes configuration files for `session` and `cache` in the test environment. Both of these drivers are set to `array` while in the test environment, meaning no session or cache data will be persisted while testing. You are free to create other testing environment configurations as necessary.
+
+The `testing` environment variables may be configured in the `phpunit.xml` file.
 
 <a name="calling-routes-from-tests"></a>
 ## Calling Routes From Tests
@@ -76,20 +78,6 @@ To call a HTTPS route, you may use the `callSecure` method:
 
 	$response = $this->callSecure('GET', 'foo/bar');
 
-> **Note:** Route filters are disabled when in the testing environment. To enable them, add `Route::enableFilters()` to your test.
-
-### DOM Crawler
-
-You may also call a route and receive a DOM Crawler instance that you may use to inspect the content:
-
-	$crawler = $this->client->request('GET', '/');
-
-	$this->assertTrue($this->client->getResponse()->isOk());
-
-	$this->assertCount(1, $crawler->filter('h1:contains("Hello World!")'));
-
-For more information on how to use the crawler, refer to its [official documentation](http://symfony.com/doc/master/components/dom_crawler.html).
-
 <a name="mocking-facades"></a>
 ## Mocking Facades
 
@@ -97,7 +85,7 @@ When testing, you may often want to mock a call to a Laravel static facade. For 
 
 	public function getIndex()
 	{
-		Event::fire('foo', array('name' => 'Dayle'));
+		Event::fire('foo', ['name' => 'Dayle']);
 
 		return 'All done!';
 	}
@@ -108,7 +96,7 @@ We can mock the call to the `Event` class by using the `shouldReceive` method on
 
 	public function testGetIndex()
 	{
-		Event::shouldReceive('fire')->once()->with('foo', array('name' => 'Dayle'));
+		Event::shouldReceive('fire')->once()->with('foo', ['name' => 'Dayle']);
 
 		$this->call('GET', '/');
 	}
