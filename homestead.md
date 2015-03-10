@@ -62,7 +62,7 @@ Homestead 目前是构建且测试于 Vagrant 1.6 版本。
 
 #### 手动通过 Git 安装（本地端没有 PHP）
 
-如果你不希望在你的本机上安装 PHP ，你可以简单地透过手动复制资源库的方式来安装 Homestead。建议可将资源库复制至你的 "home" 目录中的 `Homestead` 文件夹，如此一来 Homestead 封装包将能提供主机服务给你所有的 Laravel（及 PHP）应用:
+如果你不希望在你的本机上安装 PHP ，你可以简单地通过手动复制资源库的方式来安装 Homestead。建议将资源库复制至你的 "home" 目录中的 `Homestead` 文件夹，如此一来 Homestead 封装包将能提供主机服务给你所有的 Laravel（及 PHP）应用:
 
 	git clone https://github.com/laravel/homestead.git Homestead
 
