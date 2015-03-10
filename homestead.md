@@ -74,7 +74,7 @@ Homestead 目前是构建且测试于 Vagrant 1.6 版本。
 
 #### 通过 Composer + PHP 工具
 
-一旦封装包已经安装进你的 Vagrant 安装程序，你就可以准备透过 Composer `global` 命令来安装 Homestead CLI 工具：
+一旦封装包已经安装进你的 Vagrant 安装程序，你就可以准备通过 Composer `global` 命令来安装 Homestead CLI 工具：
 
 	composer global require "laravel/homestead=~2.0"
 
@@ -155,7 +155,7 @@ Vagrant 会将虚拟机开机，并且自动配置你的共享目录和 Nginx �
 
 要通过 SSH 连接上您的 Homestead 环境，在终端机里进入你的 Homestead 目录并执行  `vagrant ssh` 命令。
 
-因为你可能会经常需要透过 SSH 进入你的 Homestead 虚拟机，可以考虑在你的主要机器上创建一个"别名":
+因为你可能会经常需要通过 SSH 进入你的 Homestead 虚拟机，可以考虑在你的主要机器上创建一个"别名":
 
 	alias vm="ssh vagrant@127.0.0.1 -p 2222"
 
