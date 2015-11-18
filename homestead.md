@@ -109,7 +109,7 @@ Homestead 目前是构建且测试于 Vagrant 1.7 版本。
 	      to: /home/vagrant/Code/Laravel/public
 	      hhvm: true
 
-Each site will be accessible by HTTP via port 8000 and HTTPS via port 44300.
+默认情况下, 每个站点在主机里面可以通过 HTTP 8000 和 HTTPS 44300进行访问
 
 ### Bash Aliases
 
