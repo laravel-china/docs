@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 邮件
 
 - [配置](#configuration)
